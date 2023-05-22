@@ -35,14 +35,14 @@ function getImageUrl(image: string){
 
 function getAnswerClass(answer: Answer){
   if(answer.wrong){
-    return 'text-red-500 cursor-not-allowed bg-red-900/50 pointer-events-none';
+    return 'text-red-500 cursor-not-allowed dark:bg-red-900/50 bg-red-200/50 pointer-events-none';
   }
 
   if(answer.correct){
-    return 'text-green-500 cursor-not-allowed bg-green-900/50 pointer-events-none'
+    return 'text-green-500 cursor-not-allowed dark:bg-green-900/50 bg-green-200/50 pointer-events-none'
   }
 
-  return 'text-gray-300 dark:bg-gray-800 bg-gray-200 hover:opacity-70 '
+  return 'dark:text-gray-300 text-gray-700 dark:bg-gray-800 bg-gray-300 hover:opacity-70 '
 }
 
 function created(){
@@ -54,8 +54,8 @@ created();
 
 <template>
   <div class="max-w-xl mx-auto mt-2 px-3">
-    <div class="flex justify-end mb-3">
-      <span class="text-lg font-semibold text-gray-300">Skore: <span class="text-2xl">{{score}}</span></span>
+    <div class="flex justify-end mb-2">
+      <span class="text-lg font-semibold dark:text-gray-300 text-gray-800">Skore: <span class="text-2xl">{{score}}</span></span>
     </div>
     <div v-if="currentPlant" class="my-2">
       <img :src="getImageUrl(currentPlant.image)" alt="Plant" style="aspect-ratio: 576/392;" class="w-full object-contain"/>
