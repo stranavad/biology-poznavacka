@@ -5,29 +5,53 @@ import {ref} from "vue";
 import {getRandomElements, shuffle} from "./utils.ts";
 const data: Plant[] = jsonData.plants;
 
+const nextImage = ref<string | null>(null);
 const currentPlant = ref<Plant | null>(null);
 const answers = ref<Answer[]>([]);
 const score = ref(0);
 
+function updateScore(value: number){
+  score.value = value;
+
+  localStorage.setItem('score', value.toString());
+}
+
 function answerPlant(answer: Answer){
   if(answer.name === currentPlant.value!.name){
     answers.value[answers.value.findIndex(({name}) => name === answer.name)].correct = true;
-    setTimeout(() => {
-      // Wrong answer count
-      const wrongAnswers = answers.value.filter(({wrong}) => wrong).length;
 
-      score.value += 5 - wrongAnswers;
-      getNextPlant();
-    }, 750);
+    // Wrong answer count
+    const wrongAnswers = answers.value.filter(({wrong}) => wrong).length;
+    let scoreDelta = 10;
+
+    if(wrongAnswers){
+      scoreDelta = -2 * wrongAnswers
+    }
+
+    if(score.value + scoreDelta > 0){
+      updateScore(score.value + scoreDelta)
+    }
+
+    getNextPlant();
     return;
   }
 
   answers.value[answers.value.findIndex(({name}) => name === answer.name)].wrong = true;
 }
 
-function getNextPlant (){
-  currentPlant.value = data[Math.floor(Math.random() * data.length)];
-  answers.value = shuffle([...getRandomElements(data, 5).map(({name}) => name), currentPlant.value!.name]).map((name) => ({name, wrong: false, correct: false}))
+function getNextPlant (firstPlant:boolean=false){
+
+  let newPlant = data[Math.floor(Math.random() * data.length)];
+  let newAnswers = shuffle([...getRandomElements(data.filter(({name}) => name !== newPlant!.name), 5).map(({name}) => name), newPlant.name]).map((name) => ({name, wrong: false, correct: false}));
+
+  if(!firstPlant){
+    nextImage.value = newPlant.image;
+  }
+
+  setTimeout(() => {
+    currentPlant.value = newPlant;
+    answers.value = newAnswers
+  }, firstPlant ? 0 : 750);
 }
 function getImageUrl(image: string){
   return new URL(`./assets/plants/${image}`, import.meta.url).href
@@ -46,7 +70,15 @@ function getAnswerClass(answer: Answer){
 }
 
 function created(){
-  getNextPlant();
+  // Check if we have score in LS
+  const lsScore = Number(localStorage.getItem('score'));
+
+  // Set score from LS
+  if(!isNaN(lsScore)){
+    score.value = lsScore
+  }
+
+  getNextPlant(true);
 }
 
 created();
@@ -54,6 +86,7 @@ created();
 
 <template>
   <div class="max-w-xl mx-auto mt-2 px-3">
+    <img v-if="nextImage" :src="getImageUrl(nextImage)" style="display: none">
     <div class="flex justify-end mb-2">
       <span class="text-lg font-semibold dark:text-gray-300 text-gray-800">Skore: <span class="text-2xl">{{score}}</span></span>
     </div>
@@ -64,6 +97,7 @@ created();
       <button
           v-for="answer in answers"
           class="block text-left text-xs font-semibold py-3 px-2 rounded-md my-2 transition-opacity duration-100"
+          :key="`${currentPlant!.name}-${answer.name}`"
           :class="getAnswerClass(answer)"
           :disabled="answers.some(({correct}) => correct)"
           @click="answerPlant(answer)"
